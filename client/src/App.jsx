@@ -1,0 +1,42 @@
+import React, { useContext } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthContext } from './context/AuthContext';
+
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Transactions from './pages/Transactions';
+import Reports from './pages/Reports';
+import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
+
+const ProtectedRoute = ({ children }) => {
+  const { user } = useContext(AuthContext);
+  return user ? children : <Navigate to="/login" replace />;
+};
+
+function App() {
+  const { user } = useContext(AuthContext);
+
+  return (
+    <Router>
+      <div className="app-container">
+        {user && <Sidebar />}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {user && <Navbar />}
+          <main className="main-content">
+            <Routes>
+              <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+              <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
+              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            </Routes>
+          </main>
+        </div>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
