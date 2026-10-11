@@ -5,7 +5,7 @@ const morgan = require('morgan');
 const connectDB = require('./config/db');
 
 // Connect to Database
-connectDB();
+connectDB().catch((err) => console.error('Initial DB connection failed:', err.message));
 
 const app = express();
 
@@ -13,6 +13,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Ensure DB is connected for serverless invocations
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        next(err);
+    }
+});
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
@@ -26,10 +36,14 @@ app.use('/api/subscriptions', require('./routes/subscriptionRoutes'));
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: err.message || 'Internal Server Error' });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`Server running on port http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;
