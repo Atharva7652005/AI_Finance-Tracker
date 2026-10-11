@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { ArrowUpRight, ArrowDownRight, Wallet, BrainCircuit } from 'lucide-react';
@@ -11,18 +11,20 @@ const Dashboard = () => {
     const [budget, setBudget] = useState(0);
     const [insight, setInsight] = useState('');
     const [loadingAI, setLoadingAI] = useState(false);
+    const [fetchError, setFetchError] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const [txRes, bRes] = await Promise.all([
-                    axios.get('/api/transactions'),
-                    axios.get('/api/budget')
+                    api.get('/api/transactions'),
+                    api.get('/api/budget')
                 ]);
-                setTransactions(txRes.data);
-                setBudget(bRes.data.monthlyLimit);
+                setTransactions(Array.isArray(txRes.data) ? txRes.data : []);
+                setBudget(bRes.data?.monthlyLimit || 0);
             } catch (err) {
-                console.error(err);
+                console.error('Failed to load dashboard data:', err);
+                setFetchError('Unable to load latest financial data. Please check your connection.');
             }
         };
         fetchData();
@@ -31,10 +33,11 @@ const Dashboard = () => {
     const fetchInsights = async () => {
         setLoadingAI(true);
         try {
-            const res = await axios.get('/api/ai-insights');
-            setInsight(res.data.insight);
+            const res = await api.get('/api/ai-insights');
+            setInsight(res.data?.insight || 'No insights available.');
         } catch (err) {
-            console.error(err);
+            console.error('AI insight error:', err);
+            setInsight('Could not generate insights at this time. Please try again.');
         } finally {
             setLoadingAI(false);
         }
@@ -43,6 +46,17 @@ const Dashboard = () => {
     const totalIncome = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
     const totalExpense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
     const balance = totalIncome - totalExpense;
+
+    // Calculate current month's expenses for accurate monthly budget tracking
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const currentMonthExpense = transactions
+        .filter(t => {
+            const d = new Date(t.date);
+            return t.type === 'expense' && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        })
+        .reduce((acc, t) => acc + t.amount, 0);
 
     // Prepare chart data (group by date)
     const chartDataMap = {};
@@ -61,6 +75,12 @@ const Dashboard = () => {
                     <p style={{ color: 'var(--text-secondary)' }}>Welcome back, {user?.name}</p>
                 </div>
             </div>
+
+            {fetchError && (
+                <div className="glass-panel" style={{ padding: '12px 20px', marginBottom: '20px', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                    {fetchError}
+                </div>
+            )}
 
             {/* Stat Cards */}
             <div className="grid-3" style={{ marginBottom: '30px' }}>
@@ -90,9 +110,7 @@ const Dashboard = () => {
                     <div className="flex-between">
                         <div>
                             <p style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>Total Expense</p>
-                            <h2 className={budget > 0 && totalExpense > budget ? 'text-red' : ''}>
-                                {formatCurrency(totalExpense)}
-                            </h2>
+                            <h2>{formatCurrency(totalExpense)}</h2>
                         </div>
                         <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '12px', borderRadius: '12px' }}>
                             <ArrowDownRight className="text-red" size={24} />
@@ -101,13 +119,13 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {budget > 0 && totalExpense > budget && (
+            {budget > 0 && currentMonthExpense > budget && (
                 <div className="glass-panel" style={{
                     padding: '16px 24px', marginBottom: '30px', 
                     border: '1px solid rgba(239, 68, 68, 0.3)',
                     background: 'rgba(239, 68, 68, 0.1)'
                 }}>
-                    <strong className="text-red">Alert!</strong> You have exceeded your monthly budget of {formatCurrency(budget)}.
+                    <strong className="text-red">Alert!</strong> You have spent {formatCurrency(currentMonthExpense)} this month, exceeding your monthly budget of {formatCurrency(budget)}.
                 </div>
             )}
 

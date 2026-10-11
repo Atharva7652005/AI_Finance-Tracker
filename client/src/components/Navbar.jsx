@@ -13,7 +13,7 @@ const Navbar = () => {
     };
 
     return (
-        <nav style={{
+        <nav className="app-navbar" style={{
             height: '70px',
             display: 'flex',
             alignItems: 'center',
@@ -21,7 +21,8 @@ const Navbar = () => {
             padding: '0 30px',
             background: 'rgba(19, 19, 28, 0.4)',
             backdropFilter: 'blur(10px)',
-            borderBottom: '1px solid var(--glass-border)'
+            borderBottom: '1px solid var(--glass-border)',
+            flexShrink: 0
         }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>

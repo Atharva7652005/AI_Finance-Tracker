@@ -12,16 +12,21 @@ const getBudget = async (req, res) => {
 const setBudget = async (req, res) => {
     const { monthlyLimit } = req.body;
 
+    if (monthlyLimit === undefined || isNaN(Number(monthlyLimit)) || Number(monthlyLimit) < 0) {
+        return res.status(400).json({ message: 'Monthly limit must be a valid non-negative number' });
+    }
+
     try {
         let budget = await Budget.findOne({ userId: req.user });
+        const numericLimit = Number(monthlyLimit);
 
         if (budget) {
-            budget.monthlyLimit = monthlyLimit;
+            budget.monthlyLimit = numericLimit;
             await budget.save();
         } else {
             budget = await Budget.create({
                 userId: req.user,
-                monthlyLimit
+                monthlyLimit: numericLimit
             });
         }
 

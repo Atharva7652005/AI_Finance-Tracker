@@ -4,16 +4,17 @@ import { LayoutDashboard, WalletCards, PieChart, Sparkles } from 'lucide-react';
 
 const Sidebar = () => {
     return (
-        <aside style={{
+        <aside className="app-sidebar" style={{
             width: '260px',
             background: 'var(--glass-bg)',
             backdropFilter: 'blur(20px)',
             borderRight: '1px solid var(--glass-border)',
             display: 'flex',
             flexDirection: 'column',
-            padding: '24px 0'
+            padding: '24px 0',
+            flexShrink: 0
         }}>
-            <div style={{ padding: '0 24px', marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="sidebar-logo" style={{ padding: '0 24px', marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{
                     background: 'linear-gradient(135deg, var(--accent-color), var(--accent-hover))',
                     padding: '8px', borderRadius: '10px', display: 'flex', alignItems: 'center'

@@ -11,8 +11,21 @@ const generateToken = (userId) => {
 const registerUser = async (req, res) => {
     const { name, email, password } = req.body;
 
+    if (!name || !name.trim()) {
+        return res.status(400).json({ message: 'Name is required' });
+    }
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ message: 'Please provide a valid email address' });
+    }
+
+    if (!password || password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
     try {
-        const userExists = await User.findOne({ email });
+        const normalizedEmail = email.toLowerCase().trim();
+        const userExists = await User.findOne({ email: normalizedEmail });
 
         if (userExists) {
             return res.status(400).json({ message: 'User already exists' });
@@ -22,8 +35,8 @@ const registerUser = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const user = await User.create({
-            name,
-            email,
+            name: name.trim(),
+            email: normalizedEmail,
             password: hashedPassword
         });
 
@@ -45,8 +58,13 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Please provide both email and password' });
+    }
+
     try {
-        const user = await User.findOne({ email });
+        const normalizedEmail = email.toLowerCase().trim();
+        const user = await User.findOne({ email: normalizedEmail });
 
         if (user && (await bcrypt.compare(password, user.password))) {
             res.json({
