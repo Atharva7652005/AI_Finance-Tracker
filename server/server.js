@@ -1,4 +1,4 @@
-﻿require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -19,6 +19,9 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/transactions', require('./routes/transactionRoutes'));
 app.use('/api/budget', require('./routes/budgetRoutes'));
 app.use('/api/ai-insights', require('./routes/insightRoutes'));
+app.use('/api/ai-chat', require('./routes/aiChatRoutes'));
+app.use('/api/goals', require('./routes/goalRoutes'));
+app.use('/api/subscriptions', require('./routes/subscriptionRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

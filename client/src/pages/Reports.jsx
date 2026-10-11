@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { formatCurrency } from '../utils/format';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Download } from 'lucide-react';
+import ExportModal from '../components/ExportModal';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
 
@@ -13,6 +14,7 @@ const Reports = () => {
     const [period, setPeriod] = useState('this-month'); // 'this-month' | 'all-time'
     const [statusMsg, setStatusMsg] = useState({ text: '', type: '' });
     const [saving, setSaving] = useState(false);
+    const [showExport, setShowExport] = useState(false);
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -92,6 +94,13 @@ const Reports = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button 
+                        className="btn"
+                        style={{ background: 'rgba(255,255,255,0.06)' }}
+                        onClick={() => setShowExport(true)}
+                    >
+                        <Download size={16} /> Export
+                    </button>
+                    <button 
                         className={`btn ${period === 'this-month' ? 'btn-primary' : ''}`}
                         style={period !== 'this-month' ? { background: 'rgba(255,255,255,0.06)' } : {}}
                         onClick={() => setPeriod('this-month')}
@@ -107,6 +116,8 @@ const Reports = () => {
                     </button>
                 </div>
             </div>
+
+            <ExportModal isOpen={showExport} onClose={() => setShowExport(false)} transactions={transactions} />
 
             {statusMsg.text && (
                 <div className="glass-panel" style={{ 

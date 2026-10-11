@@ -6,9 +6,12 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
+import Goals from './pages/Goals';
+import Subscriptions from './pages/Subscriptions';
 import Reports from './pages/Reports';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
+import AIChatAssistant from './components/AIChatAssistant';
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
@@ -30,10 +33,13 @@ function App() {
               <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+              <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
+              <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             </Routes>
           </main>
         </div>
+        {user && <AIChatAssistant />}
       </div>
     </Router>
   );

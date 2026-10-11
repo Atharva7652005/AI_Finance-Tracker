@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
-import { Plus, Trash2, Pencil, X } from 'lucide-react';
+import { Plus, Trash2, Pencil, X, Download } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
+import ExportModal from '../components/ExportModal';
 
 const CATEGORY_SUGGESTIONS = [
     'Salary', 'Freelance', 'Food & Dining', 'Rent & Housing',
@@ -12,6 +13,7 @@ const CATEGORY_SUGGESTIONS = [
 const Transactions = () => {
     const [transactions, setTransactions] = useState([]);
     const [showForm, setShowForm] = useState(false);
+    const [showExport, setShowExport] = useState(false);
     const [editId, setEditId] = useState(null);
     const [errorMsg, setErrorMsg] = useState('');
     const [formData, setFormData] = useState({
@@ -31,10 +33,25 @@ const Transactions = () => {
             setErrorMsg('Failed to load transactions.');
         }
     }, []);
-
     useEffect(() => {
-        fetchTransactions();
-    }, [fetchTransactions]);
+        let isMounted = true;
+        (async () => {
+            try {
+                const { data } = await api.get('/api/transactions');
+                if (isMounted) {
+                    setTransactions(Array.isArray(data) ? data : []);
+                }
+            } catch (err) {
+                if (isMounted) {
+                    console.error('Failed to load transactions:', err);
+                    setErrorMsg('Failed to load transactions.');
+                }
+            }
+        })();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const handleOpenAdd = () => {
         setEditId(null);
@@ -117,11 +134,18 @@ const Transactions = () => {
                     <h1>Transactions</h1>
                     <p style={{ color: 'var(--text-secondary)' }}>Manage your income and expenses</p>
                 </div>
-                <button className="btn btn-primary" onClick={showForm ? handleCancelForm : handleOpenAdd}>
-                    {showForm ? <X size={18} /> : <Plus size={18} />}
-                    {showForm ? 'Cancel' : 'Add Transaction'}
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="btn" style={{ background: 'rgba(255,255,255,0.06)' }} onClick={() => setShowExport(true)}>
+                        <Download size={18} /> Export
+                    </button>
+                    <button className="btn btn-primary" onClick={showForm ? handleCancelForm : handleOpenAdd}>
+                        {showForm ? <X size={18} /> : <Plus size={18} />}
+                        {showForm ? 'Cancel' : 'Add Transaction'}
+                    </button>
+                </div>
             </div>
+
+            <ExportModal isOpen={showExport} onClose={() => setShowExport(false)} transactions={transactions} />
 
             {errorMsg && (
                 <div className="glass-panel" style={{ padding: '12px 20px', marginBottom: '20px', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>

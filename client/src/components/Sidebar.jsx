@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, WalletCards, PieChart, Sparkles } from 'lucide-react';
+import { LayoutDashboard, WalletCards, PieChart, Sparkles, Target, Repeat } from 'lucide-react';
 
 const Sidebar = () => {
     return (
@@ -30,6 +30,12 @@ const Sidebar = () => {
                 </NavLink>
                 <NavLink to="/transactions" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
                     <WalletCards size={20} /> Transactions
+                </NavLink>
+                <NavLink to="/goals" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
+                    <Target size={20} /> Goals & Savings
+                </NavLink>
+                <NavLink to="/subscriptions" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
+                    <Repeat size={20} /> Subscriptions
                 </NavLink>
                 <NavLink to="/reports" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
                     <PieChart size={20} /> Reports
