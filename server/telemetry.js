@@ -8,7 +8,9 @@ const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http')
 const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-http');
 const { OTLPLogExporter } = require('@opentelemetry/exporter-logs-otlp-http');
 const { PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
+const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-node');
 const { BatchLogRecordProcessor } = require('@opentelemetry/sdk-logs');
+const { trace } = require('@opentelemetry/api');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 
 // Prevent duplicate initialization in warm serverless containers
@@ -18,26 +20,27 @@ if (global.__otel_initialized) {
 }
 
 const isEnabled = process.env.OTEL_ENABLED !== 'false';
-const serviceName = process.env.OTEL_SERVICE_NAME || 'mern-backend';
+const serviceName = (process.env.OTEL_SERVICE_NAME || 'mern-backend').replace(/^=+/, '');
 const environment = process.env.NODE_ENV === 'production' ? 'production' : 'development';
 
-// Parse OTEL_EXPORTER_OTLP_HEADERS (e.g. "Authorization=Basic <token>")
-function parseOtelHeaders(raw) {
+// Parse comma-separated key=value attributes
+function parseKeyValuePairs(raw) {
     if (!raw || typeof raw !== 'string') return {};
-    const headers = {};
-    raw.split(',').forEach(pair => {
-        const idx = pair.indexOf('=');
+    const pairs = {};
+    raw.split(',').forEach(item => {
+        const idx = item.indexOf('=');
         if (idx !== -1) {
-            const key = pair.slice(0, idx).trim();
-            const val = pair.slice(idx + 1).trim();
-            if (key && val) headers[key] = val;
+            const key = item.slice(0, idx).trim();
+            const val = item.slice(idx + 1).trim();
+            if (key && val) pairs[key] = val;
         }
     });
-    return headers;
+    return pairs;
 }
 
 let sdk = null;
 let traceExporter = null;
+let spanProcessor = null;
 let metricExporter = null;
 let metricReader = null;
 let logExporter = null;
@@ -47,7 +50,7 @@ if (isEnabled) {
     try {
         const rawEndpoint = (process.env.OTEL_EXPORTER_OTLP_ENDPOINT || '').trim();
         const baseEndpoint = rawEndpoint ? rawEndpoint.replace(/\/+$/, '') : null;
-        const headers = parseOtelHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS);
+        const headers = parseKeyValuePairs(process.env.OTEL_EXPORTER_OTLP_HEADERS);
         const timeoutMs = Math.min(Math.max(Number(process.env.OTEL_EXPORT_TIMEOUT_MS) || 5000, 1000), 10000);
         const metricsIntervalMs = Math.min(Math.max(Number(process.env.OTEL_METRICS_EXPORT_INTERVAL_MS) || 60000, 5000), 300000);
 
@@ -67,6 +70,13 @@ if (isEnabled) {
             ...(traceUrl ? { url: traceUrl } : {}),
             headers,
             timeoutMillis: timeoutMs
+        });
+
+        spanProcessor = new BatchSpanProcessor(traceExporter, {
+            maxQueueSize: 512,
+            maxExportBatchSize: 64,
+            scheduledDelayMillis: 2000,
+            exportTimeoutMillis: timeoutMs
         });
 
         metricExporter = new OTLPMetricExporter({
@@ -94,19 +104,23 @@ if (isEnabled) {
             exportTimeoutMillis: timeoutMs
         });
 
+        // Parse custom resource attributes (e.g. service.namespace=..., deployment.environment=...)
+        const customResourceAttrs = parseKeyValuePairs(process.env.OTEL_RESOURCE_ATTRIBUTES);
+
         // Construct resource attributes
         const resource = defaultResource().merge(
             resourceFromAttributes({
                 'service.name': serviceName,
                 'deployment.environment': environment,
-                'service.version': '1.0.0'
+                'service.version': '1.0.0',
+                ...customResourceAttrs
             })
         );
 
-        // Initialize NodeSDK
+        // Initialize NodeSDK with explicit spanProcessors so forceFlush can directly flush spans
         sdk = new NodeSDK({
             resource,
-            traceExporter,
+            spanProcessors: [spanProcessor],
             metricReader,
             logRecordProcessors: [logRecordProcessor],
             instrumentations: [
@@ -138,12 +152,26 @@ const flushTelemetry = async (maxWaitMs = 1200) => {
         const timeoutPromise = new Promise((resolve) => setTimeout(resolve, maxWaitMs));
         const flushTasks = [];
 
-        if (traceExporter && typeof traceExporter.forceFlush === 'function') {
-            flushTasks.push(traceExporter.forceFlush().catch(() => {}));
+        // 1. Flush Traces via BatchSpanProcessor
+        if (spanProcessor && typeof spanProcessor.forceFlush === 'function') {
+            flushTasks.push(spanProcessor.forceFlush().catch(() => {}));
         }
+
+        // 2. Fallback TracerProvider flush
+        try {
+            const tp = trace.getTracerProvider();
+            const delegate = tp && typeof tp.getDelegate === 'function' ? tp.getDelegate() : tp;
+            if (delegate && typeof delegate.forceFlush === 'function' && delegate !== spanProcessor) {
+                flushTasks.push(delegate.forceFlush().catch(() => {}));
+            }
+        } catch (_) {}
+
+        // 3. Flush Metrics
         if (metricReader && typeof metricReader.forceFlush === 'function') {
             flushTasks.push(metricReader.forceFlush().catch(() => {}));
         }
+
+        // 4. Flush Logs
         if (logRecordProcessor && typeof logRecordProcessor.forceFlush === 'function') {
             flushTasks.push(logRecordProcessor.forceFlush().catch(() => {}));
         }
@@ -160,6 +188,9 @@ const flushTelemetry = async (maxWaitMs = 1200) => {
 const telemetryModule = {
     sdk,
     isEnabled,
+    spanProcessor,
+    metricReader,
+    logRecordProcessor,
     flushTelemetry
 };
 
