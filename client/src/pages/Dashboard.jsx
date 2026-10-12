@@ -50,7 +50,7 @@ const Dashboard = () => {
     const totalExpense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
     const balance = totalIncome - totalExpense;
 
-    // Calculate current month's expenses for accurate monthly budget tracking
+    // Calculate current month's expenses for accurate monthly budgt tracking
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
