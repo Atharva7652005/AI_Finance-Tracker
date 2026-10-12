@@ -2,8 +2,9 @@ import React, { useState, useEffect, useContext } from 'react';
 import api from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, Wallet, BrainCircuit } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, BrainCircuit, Scan } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
+import ReceiptScannerModal from '../components/ReceiptScannerModal';
 
 const Dashboard = () => {
     const { user } = useContext(AuthContext);
@@ -12,21 +13,23 @@ const Dashboard = () => {
     const [insight, setInsight] = useState('');
     const [loadingAI, setLoadingAI] = useState(false);
     const [fetchError, setFetchError] = useState('');
+    const [showScanner, setShowScanner] = useState(false);
+
+    const fetchData = async () => {
+        try {
+            const [txRes, bRes] = await Promise.all([
+                api.get('/api/transactions'),
+                api.get('/api/budget')
+            ]);
+            setTransactions(Array.isArray(txRes.data) ? txRes.data : []);
+            setBudget(bRes.data?.monthlyLimit || 0);
+        } catch (err) {
+            console.error('Failed to load dashboard data:', err);
+            setFetchError('Unable to load latest financial data. Please check your connection.');
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [txRes, bRes] = await Promise.all([
-                    api.get('/api/transactions'),
-                    api.get('/api/budget')
-                ]);
-                setTransactions(Array.isArray(txRes.data) ? txRes.data : []);
-                setBudget(bRes.data?.monthlyLimit || 0);
-            } catch (err) {
-                console.error('Failed to load dashboard data:', err);
-                setFetchError('Unable to load latest financial data. Please check your connection.');
-            }
-        };
         fetchData();
     }, []);
 
@@ -74,7 +77,20 @@ const Dashboard = () => {
                     <h1>Dashboard</h1>
                     <p style={{ color: 'var(--text-secondary)' }}>Welcome back, {user?.name}</p>
                 </div>
+                <button 
+                    className="btn btn-primary"
+                    onClick={() => setShowScanner(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                    <Scan size={18} /> Scan Receipt
+                </button>
             </div>
+
+            <ReceiptScannerModal 
+                isOpen={showScanner} 
+                onClose={() => setShowScanner(false)} 
+                onTransactionSaved={fetchData} 
+            />
 
             {fetchError && (
                 <div className="glass-panel" style={{ padding: '12px 20px', marginBottom: '20px', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>

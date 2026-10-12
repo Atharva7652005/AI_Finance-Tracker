@@ -1,5 +1,6 @@
 const Transaction = require('../models/Transaction');
 const Budget = require('../models/Budget');
+const Group = require('../models/Group');
 const getOpenAIClient = require('../config/openai');
 
 const TOOLS = [
@@ -62,6 +63,17 @@ const TOOLS = [
                 properties: {
                     limit: { type: 'number', description: 'Number of transactions to fetch (default 5, max 15)' }
                 }
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'get_split_groups_summary',
+            description: 'Get an overview of shared split expense groups, active group names, members, and total shared spend.',
+            parameters: {
+                type: 'object',
+                properties: {}
             }
         }
     }
@@ -177,6 +189,22 @@ const executeTool = async (name, args, userId) => {
                 notes: t.notes
             }))
         };
+    }
+
+    if (name === 'get_split_groups_summary') {
+        const groups = await Group.find({ userId });
+        const summaries = groups.map(g => {
+            let total = 0;
+            (g.expenses || []).forEach(e => total += e.amount);
+            return {
+                name: g.name,
+                category: g.category,
+                memberCount: g.members.length,
+                totalExpense: total,
+                expensesCount: g.expenses.length
+            };
+        });
+        return { groupsCount: groups.length, groups: summaries };
     }
 
     return { error: 'Unknown function' };

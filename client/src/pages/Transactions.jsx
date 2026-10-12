@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../utils/api';
-import { Plus, Trash2, Pencil, X, Download, Search } from 'lucide-react';
+import { Plus, Trash2, Pencil, X, Download, Search, Scan } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import ExportModal from '../components/ExportModal';
+import ReceiptScannerModal from '../components/ReceiptScannerModal';
 
 const CATEGORY_SUGGESTIONS = [
     'Salary', 'Freelance', 'Food & Dining', 'Rent & Housing',
@@ -14,6 +15,7 @@ const Transactions = () => {
     const [transactions, setTransactions] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [showExport, setShowExport] = useState(false);
+    const [showScanner, setShowScanner] = useState(false);
     const [editId, setEditId] = useState(null);
     const [errorMsg, setErrorMsg] = useState('');
     const [filterType, setFilterType] = useState('all');
@@ -156,7 +158,10 @@ const Transactions = () => {
                     <h1>Transactions</h1>
                     <p style={{ color: 'var(--text-secondary)' }}>Manage your income and expenses</p>
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <button className="btn btn-secondary" onClick={() => setShowScanner(true)}>
+                        <Scan size={18} /> Scan Receipt
+                    </button>
                     <button className="btn btn-secondary" onClick={() => setShowExport(true)}>
                         <Download size={18} /> Export
                     </button>
@@ -168,6 +173,11 @@ const Transactions = () => {
             </div>
 
             <ExportModal isOpen={showExport} onClose={() => setShowExport(false)} transactions={transactions} />
+            <ReceiptScannerModal 
+                isOpen={showScanner} 
+                onClose={() => setShowScanner(false)} 
+                onTransactionSaved={fetchTransactions} 
+            />
 
             {errorMsg && (
                 <div className="glass-panel" style={{ padding: '12px 20px', marginBottom: '20px', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>

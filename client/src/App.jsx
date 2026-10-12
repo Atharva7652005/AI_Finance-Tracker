@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Goals from './pages/Goals';
 import Subscriptions from './pages/Subscriptions';
+import SplitExpenses from './pages/SplitExpenses';
+import AnalyticsStudio from './pages/AnalyticsStudio';
 import Reports from './pages/Reports';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -33,6 +35,8 @@ function App() {
               <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+              <Route path="/analytics" element={<ProtectedRoute><AnalyticsStudio /></ProtectedRoute>} />
+              <Route path="/split-expenses" element={<ProtectedRoute><SplitExpenses /></ProtectedRoute>} />
               <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
               <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
