@@ -25,7 +25,7 @@ function App() {
     <Router>
       <div className="app-container">
         {user && <Sidebar />}
-        <div className="content-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+        <div className="content-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100vh', overflow: 'hidden' }}>
           {user && <Navbar />}
           <main className="main-content">
             <Routes>

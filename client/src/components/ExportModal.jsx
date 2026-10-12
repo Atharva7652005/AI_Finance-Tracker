@@ -133,7 +133,7 @@ const ExportModal = ({ isOpen, onClose, transactions }) => {
                 <div className="form-group">
                     <label className="form-label">Data Scope</label>
                     <select
-                        className="form-input"
+                        className="form-select"
                         value={scope}
                         onChange={e => setScope(e.target.value)}
                     >
@@ -148,7 +148,7 @@ const ExportModal = ({ isOpen, onClose, transactions }) => {
                     <button className="btn btn-primary" onClick={handleDownload} style={{ flex: 1 }}>
                         <Download size={18} /> Generate & Download
                     </button>
-                    <button className="btn" style={{ background: 'rgba(255,255,255,0.06)' }} onClick={onClose}>
+                    <button className="btn btn-secondary" onClick={onClose}>
                         Cancel
                     </button>
                 </div>

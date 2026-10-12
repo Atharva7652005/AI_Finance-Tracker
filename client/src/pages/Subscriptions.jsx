@@ -355,7 +355,7 @@ const Subscriptions = () => {
                             <div className="form-group">
                                 <label className="form-label">Billing Cycle</label>
                                 <select
-                                    className="form-input"
+                                    className="form-select"
                                     value={formData.billingCycle}
                                     onChange={e => setFormData({ ...formData, billingCycle: e.target.value })}
                                 >
@@ -377,7 +377,7 @@ const Subscriptions = () => {
                             <div className="form-group">
                                 <label className="form-label">Category</label>
                                 <select
-                                    className="form-input"
+                                    className="form-select"
                                     value={formData.category}
                                     onChange={e => setFormData({ ...formData, category: e.target.value })}
                                 >
@@ -388,7 +388,7 @@ const Subscriptions = () => {
                             </div>
                             <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
                                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Save Subscription</button>
-                                <button type="button" className="btn" style={{ background: 'rgba(255,255,255,0.06)' }} onClick={() => setShowModal(false)}>Cancel</button>
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
                             </div>
                         </form>
                     </div>

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../utils/api';
-import { Plus, Trash2, Pencil, X, Download } from 'lucide-react';
+import { Plus, Trash2, Pencil, X, Download, Search } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import ExportModal from '../components/ExportModal';
 
@@ -16,6 +16,9 @@ const Transactions = () => {
     const [showExport, setShowExport] = useState(false);
     const [editId, setEditId] = useState(null);
     const [errorMsg, setErrorMsg] = useState('');
+    const [filterType, setFilterType] = useState('all');
+    const [filterCategory, setFilterCategory] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
     const [formData, setFormData] = useState({
         amount: '',
         type: 'expense',
@@ -127,6 +130,25 @@ const Transactions = () => {
         }
     };
 
+    const categories = useMemo(() => {
+        return Array.from(new Set(transactions.map(t => t.category).filter(Boolean)));
+    }, [transactions]);
+
+    const filteredTransactions = useMemo(() => {
+        return transactions.filter(t => {
+            if (filterType !== 'all' && t.type !== filterType) return false;
+            if (filterCategory !== 'all' && t.category !== filterCategory) return false;
+            if (searchQuery.trim()) {
+                const query = searchQuery.toLowerCase();
+                const matchCat = t.category?.toLowerCase().includes(query);
+                const matchNotes = t.notes?.toLowerCase().includes(query);
+                const matchAmount = String(t.amount).includes(query);
+                if (!matchCat && !matchNotes && !matchAmount) return false;
+            }
+            return true;
+        });
+    }, [transactions, filterType, filterCategory, searchQuery]);
+
     return (
         <div className="animate-fade-in delay-2">
             <div className="flex-between" style={{ marginBottom: '30px' }}>
@@ -135,7 +157,7 @@ const Transactions = () => {
                     <p style={{ color: 'var(--text-secondary)' }}>Manage your income and expenses</p>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className="btn" style={{ background: 'rgba(255,255,255,0.06)' }} onClick={() => setShowExport(true)}>
+                    <button className="btn btn-secondary" onClick={() => setShowExport(true)}>
                         <Download size={18} /> Export
                     </button>
                     <button className="btn btn-primary" onClick={showForm ? handleCancelForm : handleOpenAdd}>
@@ -160,7 +182,7 @@ const Transactions = () => {
                         <div className="form-group">
                             <label className="form-label">Type</label>
                             <select 
-                                className="form-input" 
+                                className="form-select" 
                                 value={formData.type} 
                                 onChange={e => setFormData({...formData, type: e.target.value})}
                             >
@@ -226,13 +248,60 @@ const Transactions = () => {
                             <button type="submit" className="btn btn-primary">
                                 {editId ? 'Update Transaction' : 'Save Transaction'}
                             </button>
-                            <button type="button" className="btn" style={{ background: 'rgba(255,255,255,0.06)' }} onClick={handleCancelForm}>
+                            <button type="button" className="btn btn-secondary" onClick={handleCancelForm}>
                                 Cancel
                             </button>
                         </div>
                     </form>
                 </div>
             )}
+
+            {/* Filter and Search Bar with Enhanced Dropdowns */}
+            <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '16px', display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ flex: '1 1 220px', position: 'relative' }}>
+                    <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                    <input
+                        type="text"
+                        className="form-input"
+                        style={{ paddingLeft: '38px' }}
+                        placeholder="Search category, notes, or amount..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                <div style={{ width: '160px' }}>
+                    <select
+                        className="form-select"
+                        value={filterType}
+                        onChange={e => setFilterType(e.target.value)}
+                    >
+                        <option value="all">All Types</option>
+                        <option value="expense">Expenses Only</option>
+                        <option value="income">Income Only</option>
+                    </select>
+                </div>
+                <div style={{ width: '180px' }}>
+                    <select
+                        className="form-select"
+                        value={filterCategory}
+                        onChange={e => setFilterCategory(e.target.value)}
+                    >
+                        <option value="all">All Categories</option>
+                        {categories.map(c => (
+                            <option key={c} value={c}>{c}</option>
+                        ))}
+                    </select>
+                </div>
+                {(filterType !== 'all' || filterCategory !== 'all' || searchQuery) && (
+                    <button
+                        className="btn btn-ghost"
+                        onClick={() => { setFilterType('all'); setFilterCategory('all'); setSearchQuery(''); }}
+                        style={{ padding: '10px 14px' }}
+                    >
+                        Clear Filters
+                    </button>
+                )}
+            </div>
 
             <div className="glass-panel" style={{ overflow: 'hidden' }}>
                 <div style={{ overflowX: 'auto' }}>
@@ -247,15 +316,15 @@ const Transactions = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {transactions.map(t => (
+                            {filteredTransactions.map(t => (
                                 <tr key={t._id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                                     <td style={{ padding: '16px' }}>{new Date(t.date).toLocaleDateString()}</td>
                                     <td style={{ padding: '16px' }}>
                                         <span style={{ 
-                                            padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem',
-                                            background: t.type === 'income' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                            color: t.type === 'income' ? 'var(--success)' : 'var(--danger)'
-                                        }}>
+                                             padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem',
+                                             background: t.type === 'income' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                             color: t.type === 'income' ? 'var(--success)' : 'var(--danger)'
+                                         }}>
                                             {t.category}
                                         </span>
                                     </td>
@@ -283,10 +352,12 @@ const Transactions = () => {
                                     </td>
                                 </tr>
                             ))}
-                            {transactions.length === 0 && (
+                            {filteredTransactions.length === 0 && (
                                 <tr>
                                     <td colSpan="5" style={{ padding: '36px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                        No transactions recorded yet. Click "Add Transaction" to create your first entry!
+                                        {transactions.length === 0 
+                                            ? 'No transactions recorded yet. Click "Add Transaction" to create your first entry!'
+                                            : 'No transactions match the selected filters.'}
                                     </td>
                                 </tr>
                             )}

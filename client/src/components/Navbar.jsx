@@ -29,12 +29,7 @@ const Navbar = () => {
                     <User size={18} />
                     <span>{user?.name}</span>
                 </div>
-                <button onClick={handleLogout} className="btn" style={{
-                    background: 'transparent',
-                    border: '1px solid var(--glass-border)',
-                    color: 'var(--text-secondary)',
-                    padding: '8px 16px'
-                }}>
+                <button onClick={handleLogout} className="btn btn-secondary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
                     <LogOut size={16} /> Logout
                 </button>
             </div>

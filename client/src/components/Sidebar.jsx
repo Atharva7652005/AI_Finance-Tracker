@@ -6,6 +6,7 @@ const Sidebar = () => {
     return (
         <aside className="app-sidebar" style={{
             width: '260px',
+            height: '100vh',
             background: 'var(--glass-bg)',
             backdropFilter: 'blur(20px)',
             borderRight: '1px solid var(--glass-border)',

@@ -94,22 +94,19 @@ const Reports = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button 
-                        className="btn"
-                        style={{ background: 'rgba(255,255,255,0.06)' }}
+                        className="btn btn-secondary"
                         onClick={() => setShowExport(true)}
                     >
                         <Download size={16} /> Export
                     </button>
                     <button 
-                        className={`btn ${period === 'this-month' ? 'btn-primary' : ''}`}
-                        style={period !== 'this-month' ? { background: 'rgba(255,255,255,0.06)' } : {}}
+                        className={`btn ${period === 'this-month' ? 'btn-primary' : 'btn-secondary'}`}
                         onClick={() => setPeriod('this-month')}
                     >
                         This Month
                     </button>
                     <button 
-                        className={`btn ${period === 'all-time' ? 'btn-primary' : ''}`}
-                        style={period !== 'all-time' ? { background: 'rgba(255,255,255,0.06)' } : {}}
+                        className={`btn ${period === 'all-time' ? 'btn-primary' : 'btn-secondary'}`}
                         onClick={() => setPeriod('all-time')}
                     >
                         All Time
